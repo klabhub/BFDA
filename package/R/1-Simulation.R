@@ -31,7 +31,7 @@
 #'}
 
 
-BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation","custom"), n.min=10, n.max=500, design=c("sequential", "fixed.n"), boundary=Inf, B=1000, stepsize=NA, alternative=c("directional", "undirected"), verbose=TRUE, cores=1, ETA=FALSE, options.sample=list(), ...) {
+BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation"), n.min=10, n.max=500, design=c("sequential", "fixed.n"), boundary=Inf, B=1000, stepsize=NA, alternative=c("directional", "undirected"), verbose=TRUE, cores=1, ETA=FALSE, options.sample=list(), ...) {
 	
 	# link to test specific functions
 	# get() can reference a function by its (string) name
@@ -43,7 +43,7 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation",
 	alternative <- match.arg(alternative, c("directional", "undirected"))
 
 	design <- match.arg(design, c("sequential", "fixed.n"))
-	type <- match.arg(type, c("t.between", "t.paired", "correlation","custom"))
+	#type <- match.arg(type, c("t.between", "t.paired", "correlation"))  # Removed to allow arbitray models to be specified.
 	
 	# # Estimate the expected time for simulation
 	# if (ETA == TRUE) {
@@ -80,13 +80,13 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation",
 	## ======================================================================
 
 	start <- Sys.time()
+	nrParWorkers = getDoParWorkers()
 	if (verbose==TRUE) print(paste0("Simulation started at ", start))
 	flush.console()
 	
-	sim <- foreach(batch=1:getDoParWorkers(), .combine=rbind) %dopar% {
-
-		max_b <- round(B/getDoParWorkers())
-		res.counter <- 1
+	sim <- foreach(batch=1:getDoParWorkers(), .combine=rbind,.packages='BayesFactor') %dopar% {
+  	max_b <- round(B/nrParWorkers)
+	  res.counter <- 1
 
 		# res saves the statistics at each step
 		res <- matrix(NA, nrow=length(ns)*max_b, ncol=8, dimnames=list(NULL, c("id", "true.ES", "boundary", "n", "logBF", "emp.ES", "statistic", "p.value")))
@@ -95,6 +95,7 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation",
 		for (b in 1:max_b) {
 			# Draw a new maximum sample at each step
 			# If expected.ES has more than 1 value: draw a random value
+		  # If expected.ES is a matrix, draw a row (separate effect sizes)
 			if (length(dim(expected.ES))==2){	
 				expected.ES.1 <- expected.ES[sample.int(nrow(expected.ES), 1),]
 			}else{
@@ -104,7 +105,7 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation",
 			maxsamp <- sample.function(n.max, expected.ES.1, options.sample)
 
 			if (verbose==TRUE)
-				print(paste0(Sys.time(), ": batch = ", batch, "; true.ES = ", round(expected.ES.1, 2), "; Rep = ", b, "/", round(B/getDoParWorkers())))			
+				print(paste0(Sys.time(), ": batch = ", batch, "; true.ES = ", round(expected.ES.1, 2), "; Rep = ", b, "/", round(B/nrParWorkers)))			
 
 			# res0 keeps the accumulating sample variables from this specific run
 			res0 <- matrix(NA, nrow=length(ns), ncol=ncol(res), dimnames=dimnames(res))
@@ -139,6 +140,7 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation",
 
 		return(res)		
 	} # of %dopar%
+
 
 	# reduce columns
 	sim <- data.frame(sim)
@@ -185,8 +187,7 @@ print.BFDA <- function(x, ...) {
 		"t.between" = "Cohen's d",
 		"t.paired" = "Cohen's d",
 		"correlation" = "correlation",
-		"custom" = "Custom Effect",
-		{paste0("ERROR: Test type ", x$settings$type, " not recognized.")}	#default
+		"custom effect"	#default
 	)
 	
 
