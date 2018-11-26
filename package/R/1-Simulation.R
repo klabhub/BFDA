@@ -123,7 +123,7 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation")
 				res0[which(ns == n), ] <- c(
 					id		= batch*10^(floor(log(max_b, base=10))+2) + b,		# id is a unique id for each trajectory
 					true.ES	= expected.ES.1[1], #BK - Cannot store the vector of ES in this matrix...just storing 1st element for now.
-					boundary = max(boundary)#  #BK 1 element only. Pick max for now.
+					boundary = max(boundary),#  #BK 1 element only. Pick max for now.
 					n		= n,
 					logBF	= logBF,
 					emp.ES	= freq.test$emp.ES,
