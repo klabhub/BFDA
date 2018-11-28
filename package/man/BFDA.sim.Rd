@@ -5,15 +5,18 @@
 \title{Simulate ... TODO}
 \usage{
 BFDA.sim(expected.ES, type = c("t.between", "t.paired", "correlation"),
-  n.min = 10, n.max = 500, design = c("sequential", "fixed.n"),
-  boundary = Inf, B = 1000, stepsize = NA,
-  alternative = c("directional", "undirected"), verbose = TRUE, cores = 1,
-  ETA = FALSE, options.sample = list(), ...)
+  prior = NULL, n.min = 10, n.max = 500, design = c("sequential",
+  "fixed.n"), boundary = Inf, B = 1000, stepsize = NA,
+  alternative = c("two.sided", "greater", "less"), verbose = TRUE,
+  cores = 1, ETA = FALSE, options.sample = list(), seed = 1234,
+  ...)
 }
 \arguments{
-\item{expected.ES}{The assumed true effect size. This can be a single number (this leads to a fixed assumed effect size, as in a classical power analysis) or a vector of numbers (e.g., \code{rnorm(100000, 0.5, 0.1)}). If it is a vector, the sampler draws a new effect size at each step. Hence, the provided distribution represents the uncertainty about the true effect size.}
+\item{expected.ES}{The assumed true effect size. This can be a single number (this leads to a fixed assumed effect size, as in a classical power analysis) or a vector of numbers (e.g., \code{rnorm(100000, 0.5, 0.1)}). If it is a vector, the sampler draws a new effect size from this vector at each step. In this case, the provided distribution represents the uncertainty about the true effect size.}
 
-\item{type}{Either "between-t-test", "within-t-test", or "correlation"}
+\item{type}{Currently three designs are implemented: c("t.between", "t.paired", "correlation")}
+
+\item{prior}{Define the prior distribution of your alternative hypothesis. Argument takes a list as an input: The first element of the list should be a character string defining the type of the distribution ("t", "Cauchy", or "normal"). The second element of the list is another list containing the parameters of the distribution. For the t-distribution, this is prior.location, prior.df, and prior.scale; for the Cauchy-distribution, it is prior.location and prior.scale; for the normal distribution, it is prior.mean and prior.variance. The default for t-tests is \code{list("Cauchy", list(prior.location = 0, prior.scale = sqrt(2)/2))}}
 
 \item{n.min}{Minimum n before optional stopping is started}
 
@@ -21,9 +24,9 @@ BFDA.sim(expected.ES, type = c("t.between", "t.paired", "correlation"),
 
 \item{design}{"fixed.n" or "sequential". If design=="fixed.n", \code{n.min} and \code{boundary} are irrelevant, and all samples are drawn with n=n.max.}
 
-\item{boundary}{The Bayes factor (resp. its reciprocal) where the run is stopped as well. For a fixed-n design, set it to Inf}
+\item{boundary}{The Bayes factor where a sequential run is stopped. For a fixed-n design, \code{boundary} is automatically set to Inf. Provide either two values for lower and upper boundary (e.g., c(1/3, 6). If only one value is provided, it automatically uses its reciprocal for the other boundary.}
 
-\item{B}{Number of bootstrap samples (should be dividable by getDoParWorkers())}
+\item{B}{Number of bootstrap samples; should be dividable by the numbers of \code{cores} (see also \code{getDoParWorkers()})}
 
 \item{stepsize}{The number with which participants are added to the sample. If NA, the sample is increased +1 until it's 100, and +10 from that size on.}
 
@@ -37,15 +40,19 @@ BFDA.sim(expected.ES, type = c("t.between", "t.paired", "correlation"),
 
 \item{options.sample}{Further parameters passed to the data generating function (depending on the \code{type} of design). NOT IMPLEMENTED YET}
 
-\item{...}{Further parameters passed to the BF.test function}
+\item{seed}{The seed that is passed to the \code{dorng} function (which ensures reproducibility with parallel processing). If this parameter is set to \code{NULL}, a new seed is chosen at each run.}
+
+\item{...}{Further parameters passed to the BF.test function. Most importantly, the scale parameter \code{rscale} can be passed to adjust the width of the Cauchy analysis prior.}
 }
 \description{
 Simulate ... TODO
 }
 \examples{
 \dontrun{
-sim <- BFDA.sim(expected.ES=0.5, n.min=20, n.max=300, boundary=Inf, 
-			stepsize=1, design="sequential", B=1000, verbose=TRUE, cores=2)
+sim <- BFDA.sim(expected.ES=0.5, type="t.between", 
+					prior=list("Cauchy", list(prior.location=0, prior.scale=1)),
+         n.min=20, n.max=300, boundary=Inf, stepsize=1, design="sequential", 
+				B=1000, verbose=TRUE, cores=2)
 save(sim, file="sim0.5.RData")
 BFDA.analyze(sim)
 BFDA.analyze(sim, boundary=6)

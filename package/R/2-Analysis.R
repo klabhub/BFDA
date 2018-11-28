@@ -1,12 +1,12 @@
 # make sure that the id is really unique!
 #' Analyze a BFDA.sim object
 #'
-#' @param BFDA The result object from a BFDA.sim function
+#' @param BFDA The result object from a \code{\link{BFDA.sim}} function call
 #' @param design The function can analyze the simulations with regard to a fixed-n (\code{design="fixed"}) or in a sequential style (\code{design="sequential"})
 #' @param n.min What is the minimum n that is sampled before optional stopping is started? Defaults to the smallest n in the BFDA object (only relevant for \code{design="sequential"}).
-#' @param n.max What is the minimum n that is sampled before optional stopping is started? Defaults to the largest n in the BFDA object (only relevant for \code{design="sequential"}).
+#' @param n.max What is the maximum n that is sampled in sequential sampling? Defaults to the largest n in the BFDA object (only relevant for \code{design="sequential"}).
 #' @param n The fixed-n sample size that should be evaluated (only relevant for \code{design="fixed"})
-#' @param boundary At which BF boundary should trajectories stop? Either a single number (then the reciprocal is taken as the other boundary), or a vector of two numbers for lower and upper boundary (only relevant for \code{design="sequential"}).
+#' @param boundary At which BF boundary should sequential trajectories stop? Either a single number (then the reciprocal is taken as the other boundary), or a vector of two numbers for lower and upper boundary (only relevant for \code{design="sequential"}).
 #' @param verbose Print information about analysis?
 #' @param alpha For a frequentist analysis in the fixed-n case: Use this alpha level.
 #'
@@ -42,15 +42,16 @@ BFDA.analyze.sequential <- function(BFDA, boundary, n=NULL, n.min=NULL, n.max=NU
 	sim <- BFDA$sim
 	if (is.null(n.max) || is.na(n.max) || is.infinite(n.max)) n.max <- max(sim$n)
 	if (is.null(n.min) || is.na(n.min)) n.min <- min(sim$n)
-	if (all(is.null(boundary))) boundary <- max(sim$boundary)
+	if (all(is.null(boundary))) boundary <- BFDA$settings$boundary
 		
 	# reduce simulation to relevant data
 	sim <- sim %>% filter(n >= n.min, n <= n.max)
 	
-	if (length(boundary) == 1) boundary <- sort(c(boundary, 1/boundary))
+	if (length(boundary) == 1) boundary <- c(1/boundary, boundary)
+	boundary <- sort(boundary)
 	logBoundary <- log(boundary)
 		
-	if (boundary[2] > max(sim$boundary)) warning(paste0("Error: The selected boundary (", boundary[2], ") for analysis is larger than the smallest stopping boundary (", min(sim$boundary), ") in the simulation stage. Cannot produce a meaningful analysis."))
+	if (boundary[2] > max(BFDA$settings$boundary)) warning(paste0("Error: The selected boundary (", boundary[2], ") for analysis is larger than the largest stopping boundary (", max(BFDA$settings$boundary), ") in the simulation stage. Cannot produce a meaningful analysis."))
 				
 		
 	if (n.max > max(sim$n)) warning(paste0("Error: The selected n.max (", n.max, ") for analysis is larger than the largest n (", max(sim$n), ") in the simulation stage. Cannot produce a meaningful analysis."))
