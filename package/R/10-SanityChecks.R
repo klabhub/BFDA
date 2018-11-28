@@ -25,6 +25,7 @@ BFDA.sanityCheck <- function(BFDA) {
 				"t.between" = {pwr.t.test(d=sim$true.ES[1], n=n, alternative=alt, type="two.sample")$power},
 				"t.within" = {pwr.t.test(d=sim$true.ES[1], n=n, alternative=alt, type="one.sample")$power},
 				"correlation" = {pwr.r.test(r=sim$true.ES[1], n=n, alternative=alt)$power}
+				# Not sure yet "twoByTwo" = 
 			)
 			power.sim <- sum(sim$p.value<.05)/length(sim$p.value)
 			power.comparison <- rbind(power.comparison, data.frame(power.analytically, power.sim))

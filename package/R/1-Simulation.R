@@ -35,7 +35,7 @@
 #'}
 
 
-BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation"), prior = NULL, n.min=10, n.max=500, design=c("sequential", "fixed.n"), boundary=Inf, B=1000, stepsize=NA, alternative=c("two.sided", "greater", "less"), verbose=TRUE, cores=1, ETA=FALSE, options.sample=list(), seed=1234, ...) {
+BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation","twoByTwo"), prior = NULL, n.min=10, n.max=500, design=c("sequential", "fixed.n"), boundary=Inf, B=1000, stepsize=NA, alternative=c("two.sided", "greater", "less"), verbose=TRUE, cores=1, ETA=FALSE, options.sample=list(), seed=1234, ...) {
 	
 	# link to test specific functions
 	# get() can reference a function by its (string) name
@@ -48,7 +48,7 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation")
 	alternative <- match.arg(alternative, c("two.sided", "greater", "less"))
 
 	design <- match.arg(design, c("sequential", "fixed.n"))
-	#type <- match.arg(type, c("t.between", "t.paired", "correlation"))  # Removed to allow arbitray models to be specified.
+	type <- match.arg(type, c("t.between", "t.paired", "correlation","twoByTwo"))
 	prior <- prior.check.function(prior)
 	
 	# # Estimate the expected time for simulation
@@ -65,7 +65,7 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation")
 	# }
 
 	# register CPU cores for parallel processing
-	registerDoParallel(cores=cores)	
+	#registerDoParallel(cores=cores)	
 
 	# define sample sizes that are simulated
 	if (design=="fixed.n") {
@@ -110,11 +110,14 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation")
 			# Draw a new maximum sample at each step
 			# If expected.ES has more than 1 value: draw a random value
 		  # If expected.ES is a matrix, draw a row (separate effect sizes)
-			if (length(dim(expected.ES))==2){	
-				expected.ES.1 <- expected.ES[sample.int(nrow(expected.ES), 1),]
-			}else{
+			if (NROW(expected.ES)>1 && NCOL(expected.ES)>1){	
+				expected.ES.1 <- expected.ES[sample.int(NCOL(expected.ES), 1),]
+			}else if (NCOL(expected.ES)>1){
 			  expected.ES.1 <- expected.ES[sample.int(length(expected.ES), 1)]		
+			}else{
+			  expected.ES.1 <- expected.ES		
 			}
+			  
 			
 			maxsamp <- sample.function(n.max, expected.ES.1, options.sample)
 
@@ -205,7 +208,8 @@ print.BFDA <- function(x, ...) {
 		"t.between" = "Cohen's d",
 		"t.paired" = "Cohen's d",
 		"correlation" = "correlation",
-		"custom effect"	#default
+		"twoByTwo" = "interaction",
+		{paste0("ERROR: Test type ", x$settings$type, " not recognized.")}	#default
 	)
 	
 
