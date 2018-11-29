@@ -64,8 +64,10 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation",
 	# 	print("Now starting main simulation.")
 	# }
 
-	# register CPU cores for parallel processing
-	#registerDoParallel(cores=cores)	
+	# register CPU cores for parallel processing, but only if the workers have not been created already
+	if (getDoParWorkers()<cores){
+		registerDoParallel(cores=cores)
+  }
 
 	# define sample sizes that are simulated
 	if (design=="fixed.n") {
