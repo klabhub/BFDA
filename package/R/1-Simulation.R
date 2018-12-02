@@ -45,7 +45,7 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation",
 	freq.test.function <- get(paste0("freq.test.", type))
 	prior.check.function <- get(paste0("prior.check.", type))
 
-	alternative <- match.arg(alternative, c("two.sided", "greater", "less"))
+#	alternative <- match.arg(alternative, c("two.sided", "greater", "less"))
 
 	design <- match.arg(design, c("sequential", "fixed.n"))
 	type <- match.arg(type, c("t.between", "t.paired", "correlation","twoByTwo"))
@@ -100,7 +100,7 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation",
 	if (verbose==TRUE) print(paste0("Simulation started at ", start))
 	flush.console()
 	
-	sim <- foreach(batch=1:getDoParWorkers(), .combine=rbind, .options.RNG=seed) %dorng% {
+	sim <- foreach(batch=1:getDoParWorkers(), .combine=rbind, .options.RNG=seed, .packages = c('lmtest','BayesFactor') ) %dorng% {
   	max_b <- round(B/nrParWorkers)
 	  res.counter <- 1
 
