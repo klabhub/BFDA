@@ -100,7 +100,7 @@ BFDA.sim <- function(expected.ES, type=c("t.between", "t.paired", "correlation",
 	if (verbose==TRUE) print(paste0("Simulation started at ", start))
 	flush.console()
 	
-	sim <- foreach(batch=1:getDoParWorkers(), .combine=rbind, .options.RNG=seed, .packages = c('lmtest','BayesFactor') ) %dorng% {
+	sim <- foreach(batch=1:getDoParWorkers(), .combine=rbind, .options.RNG=seed, .packages = c('nlme','BayesFactor') ) %dorng% {
   	max_b <- round(B/nrParWorkers)
 	  res.counter <- 1
 
